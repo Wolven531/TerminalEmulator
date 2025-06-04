@@ -1,54 +1,86 @@
-# React + TypeScript + Vite
+# Terminal Emulator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Run example app
 
-Currently, two official plugins are available:
+1. `npm i`
+1. `npm run dev`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Test codebase
 
-## Expanding the ESLint configuration
+1. `npm i`
+1. `npm test`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## How I Setup This Repo
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
+1. `npm create vite@latest terminal-emulator`
+    - Follow prompts for a React + TypeScript project (no SWC needed)
+2. `cd terminal-emulator`
+3. `npm i axios --save`
+4. `npm install @testing-library/react @vitest/browser @vitest/coverage-v8 axios-mock-adapter playwright vitest vitest-browser-react --save-dev`
+5. Update `vite.config.ts` w/ test info
+
+```typescript
+/// <reference types="vitest" />
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+	plugins: [react()],
+	test: {
+		browser: {
+			enabled: true,
+			instances: [{ browser: 'chromium' }],
+			provider: 'playwright',
+			ui: true,
+		},
+		coverage: {
+			enabled: true,
+			exclude: [
+				'src/main.tsx',
+				'src/App.tsx',
+				'**/*.d.ts',
+				'**/*.config.{js,ts}',
+			],
+			thresholds: {
+				branches: 75,
+				functions: 75,
+				lines: 75,
+				statements: 75,
+			},
+		},
+		globals: true,
+	},
 })
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+6. Add types for compiler to `tsconfig.node.json` and `tsconfig.app.json` (inside `compilerOptions` in each file, just beneath `skipLibCheck` - add the line below)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```json
+    "types": ["vitest/globals"],
+```
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
+7. Add basic test file sibling to component file
+    1. Duplicate component file
+    1. Change extension on new file from `.tsx` to `.test.tsx`
+    1. Replace file contents with below code
+
+```typescript
+import { render } from 'vitest-browser-react'
+import {
+	TerminalEmulator,
+	type TerminalEmulatorProps,
+} from './TerminalEmulator'
+
+describe('TerminalEmulator', () => {
+	const defaultProps: TerminalEmulatorProps = {
+		// initialValue: undefined,
+	}
+
+	it('renders w/ default props w/o crashing', () => {
+		expect(() => {
+			render(<TerminalEmulator {...defaultProps} />)
+		}).not.toThrow()
+	})
 })
 ```
