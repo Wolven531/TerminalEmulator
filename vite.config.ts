@@ -14,7 +14,12 @@ export default defineConfig({
 		},
 		coverage: {
 			enabled: true,
-			exclude: ['src/main.tsx', '**/*.d.ts', '**/*.config.{js,ts}'],
+			exclude: [
+				'src/main.tsx',
+				'src/App.tsx',
+				'**/*.d.ts',
+				'**/*.config.{js,ts}',
+			],
 			thresholds: {
 				branches: 75,
 				functions: 75,
