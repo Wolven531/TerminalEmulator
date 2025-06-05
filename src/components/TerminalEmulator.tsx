@@ -5,12 +5,17 @@ import {
 	type CSSProperties,
 	type FC,
 } from 'react'
+import {
+	DEFAULT_DELAY_BETWEEN_LINES,
+	DEFAULT_DELAY_PER_CHARACTER,
+} from '../constants'
 
 export type TerminalEmulatorProps = {
 	backgroundColor?: string | undefined
 	color?: string | undefined
 	cols?: number | undefined
-	delay?: number | undefined
+	delayBetweenLines?: number | undefined
+	delayPerCharacter?: number | undefined
 	fontFamily?: string | undefined
 	fontSize?: string | number | undefined
 	initialValue?: string | undefined
@@ -28,7 +33,8 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 	backgroundColor = '#222',
 	color = '#0ff',
 	cols = 80,
-	delay = DELAY_PER_CHARACTER,
+	delayBetweenLines = DEFAULT_DELAY_BETWEEN_LINES,
+	delayPerCharacter = DEFAULT_DELAY_PER_CHARACTER,
 	fontFamily = 'monospace',
 	fontSize = '1em',
 	initialValue = '',
@@ -90,8 +96,8 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 		}))
 	}, [isRunning])
 
-	// this effect is the main logic loop of the emulator, which renders
-	// characters in an async manner
+	// this effect is main logic loop of emulator, which renders characters
+	// in an async manner
 	useEffect(() => {
 		if (!textInfo.isRunning) {
 			return
@@ -106,8 +112,19 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 		}
 
 		let timerId: NodeJS.Timeout
-		const nextCharacter = textInfo.remainingText[0]
+
+		/**
+		 * This function waits for a time and then renders provided character
+		 * via updating textInfo.currentText
+		 *
+		 * Note that function is defined inside useEffect because it
+		 * requires and manipulates timerId
+		 *
+		 * @param {string} character Character to render
+		 */
 		const renderCharacter = async (character: string) => {
+			const isNewLine = character === '\n'
+
 			// create and wait for new Promise w/ delay for character, store
 			// timerId for clean up purposes
 			await new Promise<void>((resolve) => {
@@ -118,9 +135,25 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 					}))
 
 					resolve()
-				}, delay)
+				}, delayPerCharacter)
 			})
+
+			if (delayBetweenLines > 0 && isNewLine) {
+				clearTimeout(timerId)
+
+				// create and wait for new Promise w/ delay for next line,
+				// store timerId for clean up purposes
+				await new Promise<void>((resolve) => {
+					timerId = setTimeout(() => {
+						// do NOT update state here since it is updated above;
+						// just resolve promise (since delay time elapsed)
+						resolve()
+					}, delayBetweenLines)
+				})
+			}
 		}
+
+		const nextCharacter = textInfo.remainingText[0]
 
 		renderCharacter(nextCharacter).finally(() => {
 			// after async render finishes, update remainingText
@@ -134,11 +167,16 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 		})
 
 		// this clean up function ensures that if re-render occurs, any pending
-		// character timeouts are cleared (prevents StrictMode errors as well)
+		// timeouts are cleared (prevents StrictMode errors as well)
 		return () => {
 			clearTimeout(timerId)
 		}
-	}, [delay, textInfo.isRunning, textInfo.remainingText])
+	}, [
+		delayBetweenLines,
+		delayPerCharacter,
+		textInfo.isRunning,
+		textInfo.remainingText,
+	])
 
 	return (
 		<textarea
@@ -150,7 +188,5 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 		/>
 	)
 }
-
-const DELAY_PER_CHARACTER = 50
 
 export default TerminalEmulator
