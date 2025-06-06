@@ -1,5 +1,5 @@
-import { act } from 'react'
-import { render, type RenderResult } from 'vitest-browser-react'
+import { waitFor } from '@testing-library/react'
+import { render } from 'vitest-browser-react'
 import {
 	TerminalEmulator,
 	type TerminalEmulatorProps,
@@ -10,48 +10,52 @@ describe('TerminalEmulator', () => {
 		value: '',
 	}
 
-	it.only('renders w/ default props w/o crashing', () => {
+	it('renders w/ default props w/o crashing', () => {
 		expect(() => {
 			render(<TerminalEmulator {...defaultProps} />)
 		}).not.toThrow()
 	})
 
-	it('renders provided text properly', async () => {
-		// vitest.useFakeTimers()
+	it('renders provided text properly one letter at a time', async () => {
+		const totalText = 'sOmE uLtImAtE eNd ValUe'
 
-		let renderResult: RenderResult | null = null
-
-		await act(async () => {
-			renderResult = render(
-				<TerminalEmulator value="sOmE iNiTiAl ValUe" />,
-			)
-
-			// await vitest.runOnlyPendingTimersAsync()
-			// await vitest.runAllTimersAsync()
-
-			// await vitest.advanceTimersByTimeAsync(5000)
-		})
-
-		// await act(async () => {
-		// 	await vitest.runOnlyPendingTimersAsync()
-		// 	await vitest.runAllTimersAsync()
-		// 	await vitest.advanceTimersByTimeAsync(5000)
-
-		// 	vitest.useRealTimers()
-		// })
-
-		// vitest.runAllTimers()
-		// vitest.run
-
-		expect(renderResult).not.toBeNull()
-
-		const { getByRole } = renderResult as unknown as RenderResult
+		const { getByRole } = render(<TerminalEmulator value={totalText} />)
 
 		const textBox = getByRole('textbox')
 
 		expect(textBox).toBeVisible()
-		expect(textBox).toHaveValue('sOmE iNiTiAl ValUe')
 
-		// vitest.useRealTimers()
+		// ensure <= is used to include final character
+		for (let a = 0; a <= totalText.length; a++) {
+			await waitFor(() => {
+				expect(textBox).toHaveValue(totalText.substring(0, a))
+			})
+		}
+
+		expect(textBox).toHaveValue(totalText)
+	})
+
+	it('renders provided lines properly one letter at a time', async () => {
+		const totalText = ['Welcome', 'Glad to see you', '.....'].join('\n')
+
+		const { getByRole } = render(
+			<TerminalEmulator
+				delayBetweenLines={25}
+				value={totalText}
+			/>,
+		)
+
+		const textBox = getByRole('textbox')
+
+		expect(textBox).toBeVisible()
+
+		// ensure <= is used to include final character
+		for (let a = 0; a <= totalText.length; a++) {
+			await waitFor(() => {
+				expect(textBox).toHaveValue(totalText.substring(0, a))
+			})
+		}
+
+		expect(textBox).toHaveValue(totalText)
 	})
 })
