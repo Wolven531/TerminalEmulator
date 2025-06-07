@@ -10,7 +10,7 @@ import {
 	DEFAULT_DELAY_PER_CHARACTER,
 } from '../constants'
 
-export type TerminalEmulatorProps = {
+export type TerminalEmulatorTextAreaProps = {
 	backgroundColor?: string | undefined
 	color?: string | undefined
 	cols?: number | undefined
@@ -29,7 +29,7 @@ export type TerminalEmulatorProps = {
 	value: string
 }
 
-export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
+export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 	backgroundColor = '#222',
 	color = '#0ff',
 	cols = 80,
@@ -189,4 +189,4 @@ export const TerminalEmulator: FC<TerminalEmulatorProps> = ({
 	)
 }
 
-export default TerminalEmulator
+export default TerminalEmulatorTextArea

@@ -1,25 +1,27 @@
 import { waitFor } from '@testing-library/react'
 import { render } from 'vitest-browser-react'
 import {
-	TerminalEmulator,
-	type TerminalEmulatorProps,
-} from './TerminalEmulator'
+	TerminalEmulatorTextArea,
+	type TerminalEmulatorTextAreaProps,
+} from './TerminalEmulatorTextArea'
 
-describe('TerminalEmulator', () => {
-	const defaultProps: TerminalEmulatorProps = {
+describe('TerminalEmulatorTextArea', () => {
+	const defaultProps: TerminalEmulatorTextAreaProps = {
 		value: '',
 	}
 
 	it('renders w/ default props w/o crashing', () => {
 		expect(() => {
-			render(<TerminalEmulator {...defaultProps} />)
+			render(<TerminalEmulatorTextArea {...defaultProps} />)
 		}).not.toThrow()
 	})
 
 	it('renders provided text properly one letter at a time', async () => {
 		const totalText = 'sOmE uLtImAtE eNd ValUe'
 
-		const { getByRole } = render(<TerminalEmulator value={totalText} />)
+		const { getByRole } = render(
+			<TerminalEmulatorTextArea value={totalText} />,
+		)
 
 		const textBox = getByRole('textbox')
 
@@ -39,7 +41,7 @@ describe('TerminalEmulator', () => {
 		const totalText = ['Welcome', 'Glad to see you', '.....'].join('\n')
 
 		const { getByRole } = render(
-			<TerminalEmulator
+			<TerminalEmulatorTextArea
 				delayBetweenLines={25}
 				value={totalText}
 			/>,
