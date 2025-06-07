@@ -1,0 +1,19 @@
+textarea::-webkit-scrollbar {
+	width: var(--font-size);
+}
+
+textarea::-webkit-scrollbar-track {
+	background-color: color(
+		from var(--background-color) srgb calc(r + 0.05) calc(g + 0.05)
+			calc(b + 0.05) / calc(alpha - 0.1)
+	);
+}
+
+textarea::-webkit-scrollbar-corner,
+textarea::-webkit-resizer {
+	background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb {
+	background: var(--color);
+}
