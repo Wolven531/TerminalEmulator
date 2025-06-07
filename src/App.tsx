@@ -1,5 +1,7 @@
-import { type FC } from 'react'
-import { TerminalEmulator } from './components/TerminalEmulator'
+import type { FC } from 'react'
+import { TerminalEditor } from './components/TerminalEditor'
+// import { TerminalEmulatorTextArea } from './components/TerminalEmulatorTextArea'
+// import { FancyTerminalEmulator } from './components/FancyTerminalEmulator'
 
 // styles
 import './App.css'
@@ -14,7 +16,9 @@ export const App: FC = () => {
 	return (
 		<>
 			<h3>App</h3>
-			<TerminalEmulator value={initialLines.join('\n')} />
+			<TerminalEditor lines={initialLines} />
+			{/* <TerminalEmulatorTextArea value={initialLines} /> */}
+			{/* <FancyTerminalEmulator value={initialLines} /> */}
 		</>
 	)
 }
