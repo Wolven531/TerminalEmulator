@@ -15,7 +15,7 @@
 1. `npm create vite@latest terminal-emulator`
     - Follow prompts for a React + TypeScript project (no SWC needed)
 2. `cd terminal-emulator`
-3. `npm i axios --save`
+3. `npm i axios sass-embedded --save`
 4. `npm install @testing-library/react @vitest/browser @vitest/coverage-v8 axios-mock-adapter playwright vitest vitest-browser-react --save-dev`
 5. Update `vite.config.ts` w/ test info
 
