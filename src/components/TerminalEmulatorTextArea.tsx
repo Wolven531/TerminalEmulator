@@ -1,6 +1,7 @@
 import {
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	type CSSProperties,
 	type FC,
@@ -26,7 +27,7 @@ export type TerminalEmulatorTextAreaProps = {
 	readOnly?: boolean | undefined
 	rows?: number | undefined
 	style?: CSSProperties | undefined
-	value: string
+	value: string | string[]
 }
 
 export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
@@ -47,11 +48,23 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 	style = {},
 	value,
 }) => {
+	// --- hooks and ref values first
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+	// create the normalized value first, as everything relies on this
+	const normalizedValue = useMemo(
+		() => (Array.isArray(value) ? value.join('\n') : value),
+		[value],
+	)
+
+	// --- stateful values after hooks and refs
 	const [textInfo, setTextInfo] = useState({
 		currentText: initialValue,
 		isRunning,
-		remainingText: value,
+		remainingText: normalizedValue,
 	})
+
+	// --- memo values after stateful values
 
 	// this memoized value ensures styles are kept in sync w/ prop updates
 	const mergedStyle = useMemo(
@@ -77,15 +90,25 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 		],
 	)
 
-	// this effect ensures that when initialValue or value props are changed,
+	// --- effect values last (other than constants)
+
+	// this effect ensures that when initialValue prop or normalizedValue are changed,
 	// everything except isRunning is reset
 	useEffect(() => {
-		setTextInfo((prior) => ({
-			...prior,
-			currentText: initialValue,
-			remainingText: value,
-		}))
-	}, [initialValue, value])
+		setTextInfo((prior) => {
+			const isBeingAppended = normalizedValue.startsWith(
+				prior.currentText,
+			)
+			const startInd = isBeingAppended ? prior.currentText.length : 0
+			const remainingText = normalizedValue.substring(startInd)
+
+			return {
+				...prior,
+				currentText: isBeingAppended ? prior.currentText : initialValue,
+				remainingText,
+			}
+		})
+	}, [initialValue, normalizedValue])
 
 	// this effect ensures that when isRunning prop is changed, isRunning state
 	// stays synced
@@ -100,14 +123,6 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 	// in an async manner
 	useEffect(() => {
 		if (!textInfo.isRunning) {
-			return
-		}
-
-		if (textInfo.remainingText.length < 1) {
-			setTextInfo((prior) => ({
-				...prior,
-				isRunning: false,
-			}))
 			return
 		}
 
@@ -153,18 +168,26 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 			}
 		}
 
-		const nextCharacter = textInfo.remainingText[0]
+		const nextCharacter = textInfo.remainingText?.[0]
 
-		renderCharacter(nextCharacter).finally(() => {
-			// after async render finishes, update remainingText
-			setTextInfo((prior) => ({
-				...prior,
-				remainingText:
-					prior.remainingText.length > 1
-						? prior.remainingText.substring(1)
-						: '',
-			}))
-		})
+		if (nextCharacter) {
+			renderCharacter(nextCharacter).finally(() => {
+				// scroll to bottom of textarea
+				if (textareaRef.current) {
+					textareaRef.current.scrollTop =
+						textareaRef.current.scrollHeight
+				}
+
+				// after async render finishes, update remainingText
+				setTextInfo((prior) => ({
+					...prior,
+					remainingText:
+						prior.remainingText.length > 1
+							? prior.remainingText.substring(1)
+							: '',
+				}))
+			})
+		}
 
 		// this clean up function ensures that if re-render occurs, any pending
 		// timeouts are cleared (prevents StrictMode errors as well)
@@ -182,6 +205,7 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 		<textarea
 			cols={cols}
 			readOnly={readOnly}
+			ref={textareaRef}
 			rows={rows}
 			style={mergedStyle}
 			value={textInfo.currentText}
