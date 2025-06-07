@@ -15,6 +15,7 @@ export default defineConfig({
 		coverage: {
 			enabled: true,
 			exclude: [
+				'test-utils.tsx',
 				'src/main.tsx',
 				'src/App.tsx',
 				'**/*.d.ts',
