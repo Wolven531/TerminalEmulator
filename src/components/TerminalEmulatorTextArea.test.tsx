@@ -8,6 +8,7 @@ import {
 
 describe('TerminalEmulatorTextArea', () => {
 	const defaultProps: TerminalEmulatorTextAreaProps = {
+		delayPerCharacter: 10,
 		value: '',
 	}
 
@@ -131,8 +132,29 @@ describe('TerminalEmulatorTextArea', () => {
 		const totalText = ['Welcome', 'Glad to see you', '.....'].join('\n')
 
 		const { getByRole } = render(
+			<TerminalEmulatorTextArea value={totalText} />,
+		)
+
+		const textBox = getByRole('textbox')
+
+		expect(textBox).toBeVisible()
+
+		// ensure <= is used to include final character
+		for (let a = 0; a <= totalText.length; a++) {
+			await waitFor(() => {
+				expect(textBox).toHaveValue(totalText.substring(0, a))
+			})
+		}
+
+		expect(textBox).toHaveValue(totalText)
+	})
+
+	it('renders provided lines properly one letter at a time w/ delay between lines', async () => {
+		const totalText = ['Welcome', 'Glad to see you', '.....'].join('\n')
+
+		const { getByRole } = render(
 			<TerminalEmulatorTextArea
-				delayBetweenLines={25}
+				delayBetweenLines={10}
 				value={totalText}
 			/>,
 		)
