@@ -11,6 +11,9 @@ import {
 	DEFAULT_DELAY_PER_CHARACTER,
 } from '../constants'
 
+// styles
+import './terminal-emulator-textarea.scss'
+
 export type TerminalEmulatorTextAreaProps = {
 	backgroundColor?: string | undefined
 	color?: string | undefined
@@ -75,7 +78,11 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 			fontSize,
 			letterSpacing,
 			lineHeight,
+			overflow: 'auto',
 			padding,
+			'--background-color': backgroundColor,
+			'--color': color,
+			'--font-size': fontSize,
 			...style,
 		}),
 		[
@@ -96,9 +103,11 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 	// everything except isRunning is reset
 	useEffect(() => {
 		setTextInfo((prior) => {
-			const isBeingAppended = normalizedValue.startsWith(
-				prior.currentText,
-			)
+			// being appended if remaining is empty or if function returns true
+			const isBeingAppended =
+				prior.remainingText.length < 1 ||
+				isValueBeingAppended(prior.currentText, normalizedValue)
+
 			const startInd = isBeingAppended ? prior.currentText.length : 0
 			const remainingText = normalizedValue.substring(startInd)
 
@@ -211,6 +220,32 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 			value={textInfo.currentText}
 		/>
 	)
+}
+
+/**
+ * This function checks if a new text value is being appended to a starting
+ * value; it is optimized for long string to only check the first 100
+ * characters
+ *
+ * @param { string } existingValue Current text
+ * @param { string } newValue New text value to compare
+ */
+const isValueBeingAppended = (
+	existingValue: string,
+	newValue: string,
+): boolean => {
+	if (newValue.length < existingValue.length) {
+		return false
+	}
+
+	let valueToSearch = existingValue
+
+	// for long logs, check only first 100 chars for performance
+	if (existingValue.length > 100 && newValue.length > 100) {
+		valueToSearch = existingValue.substring(0, 100)
+	}
+
+	return newValue.startsWith(valueToSearch)
 }
 
 export default TerminalEmulatorTextArea
