@@ -102,22 +102,24 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 	// this effect ensures that when initialValue prop or normalizedValue are changed,
 	// everything except isRunning is reset
 	useEffect(() => {
-		setTextInfo((prior) => {
-			// being appended if remaining is empty or if function returns true
-			const isBeingAppended =
-				prior.remainingText.length < 1 ||
-				isValueBeingAppended(prior.currentText, normalizedValue)
+		// being appended if remaining is empty or if function returns true
+		const isBeingAppended =
+			textInfo.remainingText.length < 1 ||
+			isValueBeingAppended(textInfo.currentText, normalizedValue)
+		const startInd = isBeingAppended ? textInfo.currentText.length : 0
+		const remainingText = normalizedValue.substring(startInd)
 
-			const startInd = isBeingAppended ? prior.currentText.length : 0
-			const remainingText = normalizedValue.substring(startInd)
-
-			return {
-				...prior,
-				currentText: isBeingAppended ? prior.currentText : initialValue,
-				remainingText,
-			}
-		})
-	}, [initialValue, normalizedValue])
+		setTextInfo((prior) => ({
+			...prior,
+			currentText: isBeingAppended ? prior.currentText : initialValue,
+			remainingText,
+		}))
+	}, [
+		initialValue,
+		normalizedValue,
+		textInfo.currentText,
+		textInfo.remainingText,
+	])
 
 	// this effect ensures that when isRunning prop is changed, isRunning state
 	// stays synced
@@ -155,25 +157,38 @@ export const TerminalEmulatorTextArea: FC<TerminalEmulatorTextAreaProps> = ({
 				timerId = setTimeout(() => {
 					setTextInfo((prior) => ({
 						...prior,
-						currentText: prior.currentText.concat(character),
+						currentText: isNewLine
+							? prior.currentText // keep current text to wait for potential line delay
+							: prior.currentText.concat(character),
 					}))
 
 					resolve()
 				}, delayPerCharacter)
 			})
 
-			if (delayBetweenLines > 0 && isNewLine) {
-				clearTimeout(timerId)
+			if (isNewLine) {
+				if (delayBetweenLines < 1) {
+					setTextInfo((prior) => ({
+						...prior,
+						currentText: prior.currentText.concat(character),
+					}))
+				} else {
+					clearTimeout(timerId)
 
-				// create and wait for new Promise w/ delay for next line,
-				// store timerId for clean up purposes
-				await new Promise<void>((resolve) => {
-					timerId = setTimeout(() => {
-						// do NOT update state here since it is updated above;
-						// just resolve promise (since delay time elapsed)
-						resolve()
-					}, delayBetweenLines)
-				})
+					// create and wait for new Promise w/ delay for next line,
+					// store timerId for clean up purposes
+					await new Promise<void>((resolve) => {
+						timerId = setTimeout(() => {
+							setTextInfo((prior) => ({
+								...prior,
+								currentText:
+									prior.currentText.concat(character),
+							}))
+
+							resolve()
+						}, delayBetweenLines)
+					})
+				}
 			}
 		}
 
